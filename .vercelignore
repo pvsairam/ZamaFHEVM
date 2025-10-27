@@ -1,0 +1,13 @@
+# Development files
+.git
+.gitignore
+node_modules
+*.md
+
+# Replit files
+.replit
+replit.nix
+
+# Server code (not needed for Vercel - uses api/ functions)
+server/index.ts
+dist/index.js

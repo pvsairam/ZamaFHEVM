@@ -1,0 +1,188 @@
+import { sql } from "drizzle-orm";
+import { pgTable, text, varchar, timestamp, index } from "drizzle-orm/pg-core";
+import { customType } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// Custom bytea type for binary data (FHE ciphertexts)
+const bytea = customType<{ data: Buffer; notNull: false; default: false }>({
+  dataType() {
+    return "bytea";
+  },
+});
+
+// Origins represent registered domains/websites using FHE Analytics
+export const origins = pgTable("origins", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  domain: text("domain").notNull().unique(),
+  token: text("token").notNull().unique(), // API token for collection
+  ownerAddress: text("owner_address").notNull(), // Wallet address of owner
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+  domainIdx: index("domain_idx").on(table.domain),
+  ownerIdx: index("owner_idx").on(table.ownerAddress),
+}));
+
+// Encrypted events - individual analytics events stored as ciphertext
+export const encryptedEvents = pgTable("encrypted_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  originId: varchar("origin_id").notNull().references(() => origins.id, { onDelete: "cascade" }),
+  timestamp: timestamp("timestamp").notNull(),
+  page: text("page").notNull(), // Page path
+  eventType: text("event_type").notNull(), // 'pageview' | 'session' | 'conversion' | 'event'
+  cipherBlob: bytea("cipher_blob").notNull(), // Encrypted payload using FHE
+  metadata: text("metadata"), // Optional JSON metadata (non-sensitive)
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  originTimestampIdx: index("origin_timestamp_idx").on(table.originId, table.timestamp),
+  eventTypeIdx: index("event_type_idx").on(table.eventType),
+}));
+
+// Aggregates - decrypted aggregate statistics computed via homomorphic operations
+export const aggregates = pgTable("aggregates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  originId: varchar("origin_id").notNull().references(() => origins.id, { onDelete: "cascade" }),
+  day: timestamp("day").notNull(), // Aggregation day
+  metric: text("metric").notNull(), // 'visitors' | 'pageviews' | 'sessions' | 'bounces' | 'conversions'
+  valueCipher: bytea("value_cipher"), // Optional: retain encrypted aggregate
+  valuePlain: text("value_plain"), // Decrypted aggregate value (JSON)
+  proofCid: text("proof_cid"), // IPFS CID of proof artifact
+  anchorTx: text("anchor_tx"), // Sepolia transaction hash
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  uniqueMetric: index("unique_metric_idx").on(table.originId, table.day, table.metric),
+}));
+
+// Roles - access control for origins (owner, admin, viewer)
+export const roles = pgTable("roles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  originId: varchar("origin_id").notNull().references(() => origins.id, { onDelete: "cascade" }),
+  address: text("address"), // Wallet address
+  email: text("email"), // Optional email for viewer invites
+  role: text("role").notNull(), // 'owner' | 'admin' | 'viewer'
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+  originRoleIdx: index("origin_role_idx").on(table.originId, table.address, table.email),
+}));
+
+// FHE Keys - public/private key pairs for encryption
+export const fheKeys = pgTable("fhe_keys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  originId: varchar("origin_id").notNull().references(() => origins.id, { onDelete: "cascade" }),
+  publicKey: text("public_key").notNull(), // PEM encoded public key
+  keyFingerprint: text("key_fingerprint").notNull(), // SHA256 hash for verification
+  isActive: text("is_active").notNull().default('true'), // 'true' | 'false'
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Relations
+export const originsRelations = relations(origins, ({ many }) => ({
+  events: many(encryptedEvents),
+  aggregates: many(aggregates),
+  roles: many(roles),
+  keys: many(fheKeys),
+}));
+
+export const encryptedEventsRelations = relations(encryptedEvents, ({ one }) => ({
+  origin: one(origins, {
+    fields: [encryptedEvents.originId],
+    references: [origins.id],
+  }),
+}));
+
+export const aggregatesRelations = relations(aggregates, ({ one }) => ({
+  origin: one(origins, {
+    fields: [aggregates.originId],
+    references: [origins.id],
+  }),
+}));
+
+export const rolesRelations = relations(roles, ({ one }) => ({
+  origin: one(origins, {
+    fields: [roles.originId],
+    references: [origins.id],
+  }),
+}));
+
+export const fheKeysRelations = relations(fheKeys, ({ one }) => ({
+  origin: one(origins, {
+    fields: [fheKeys.originId],
+    references: [origins.id],
+  }),
+}));
+
+// Insert schemas (for API requests - token excluded, generated by backend)
+export const insertOriginSchema = createInsertSchema(origins).omit({
+  id: true,
+  token: true, // Generated by backend
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Full insert schema for database operations (includes token)
+export const insertOriginWithTokenSchema = createInsertSchema(origins).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEncryptedEventSchema = createInsertSchema(encryptedEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAggregateSchema = createInsertSchema(aggregates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertFheKeySchema = createInsertSchema(fheKeys).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types
+export type Origin = typeof origins.$inferSelect;
+export type InsertOrigin = z.infer<typeof insertOriginSchema>;
+export type InsertOriginWithToken = z.infer<typeof insertOriginWithTokenSchema>;
+
+export type EncryptedEvent = typeof encryptedEvents.$inferSelect;
+export type InsertEncryptedEvent = z.infer<typeof insertEncryptedEventSchema>;
+
+export type Aggregate = typeof aggregates.$inferSelect;
+export type InsertAggregate = z.infer<typeof insertAggregateSchema>;
+
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+
+export type FheKey = typeof fheKeys.$inferSelect;
+export type InsertFheKey = z.infer<typeof insertFheKeySchema>;
+
+// API response types
+export type DashboardMetrics = {
+  visitors: number;
+  pageviews: number;
+  sessions: number;
+  avgSession: number;
+  bounceRate: number;
+  conversions: number;
+  encrypted: boolean;
+};
+
+export type TimeSeriesData = {
+  date: string;
+  value: number;
+}[];
+
+export type TopPage = {
+  page: string;
+  views: number;
+  encrypted: boolean;
+};

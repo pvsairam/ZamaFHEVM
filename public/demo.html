@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zama FHE Analytics - Live Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2e 100%);
+      color: #e3e3e3;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: #9ca3af;
+      font-size: 1.1rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      margin-top: 1rem;
+    }
+
+    .badge-icon {
+      width: 16px;
+      height: 16px;
+      color: #8b5cf6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: rgba(30, 30, 30, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 1rem;
+      padding: 2rem;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
+      border-color: rgba(139, 92, 246, 0.5);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .card-icon {
+      width: 24px;
+      height: 24px;
+      color: #8b5cf6;
+    }
+
+    .button {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(139, 92, 246, 0.4);
+    }
+
+    .button:active {
+      transform: translateY(0);
+    }
+
+    .button-secondary {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .counter {
+      background: rgba(139, 92, 246, 0.05);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .counter-label {
+      color: #9ca3af;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .counter-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #8b5cf6;
+    }
+
+    .input {
+      width: 100%;
+      background: rgba(139, 92, 246, 0.05);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      color: #e3e3e3;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+      transition: all 0.3s ease;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .nav-link {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: #e3e3e3;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 0.875rem;
+    }
+
+    .nav-link:hover {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: #8b5cf6;
+    }
+
+    .instructions {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .instructions h3 {
+      color: #60a5fa;
+      margin-bottom: 0.75rem;
+      font-size: 1.1rem;
+    }
+
+    .instructions ol {
+      margin-left: 1.5rem;
+      color: #9ca3af;
+      line-height: 1.8;
+    }
+
+    .instructions li {
+      margin-bottom: 0.5rem;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .tracking-indicator {
+      animation: pulse 2s infinite;
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🔐 Zama FHE Analytics Live Demo</h1>
+      <p class="subtitle">
+        Interact with this page to generate encrypted events
+      </p>
+      <div class="badge">
+        <span class="tracking-indicator"></span>
+        <span>🔒 Tracking Active - All data encrypted with FHE</span>
+      </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+      <h3>📋 How to Test</h3>
+      <ol>
+        <li><strong>Open your dashboard</strong> in a new tab to see real-time metrics</li>
+        <li><strong>Interact with elements</strong> below (click buttons, submit forms, navigate)</li>
+        <li><strong>Watch metrics update</strong> in real-time via Server-Sent Events</li>
+        <li>All data is <strong>encrypted in your browser</strong> before transmission!</li>
+      </ol>
+    </div>
+
+    <!-- Interactive Elements Grid -->
+    <div class="grid">
+      <!-- Click Counter Card -->
+      <div class="card">
+        <h3 class="card-title">
+          <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path>
+          </svg>
+          Button Clicks
+        </h3>
+        <button class="button" onclick="trackClick('primary_button')">
+          Click Me!
+        </button>
+        <button class="button button-secondary" onclick="trackClick('secondary_button')">
+          Click Me Too!
+        </button>
+        <div class="counter">
+          <div class="counter-label">Total Clicks</div>
+          <div class="counter-value" id="clickCounter">0</div>
+        </div>
+      </div>
+
+      <!-- Form Submission Card -->
+      <div class="card">
+        <h3 class="card-title">
+          <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Form Submissions
+        </h3>
+        <form onsubmit="trackFormSubmit(event)">
+          <input type="text" class="input" placeholder="Enter your name" required>
+          <input type="email" class="input" placeholder="Enter your email" required>
+          <button type="submit" class="button">Submit Form</button>
+        </form>
+        <div class="counter">
+          <div class="counter-label">Forms Submitted</div>
+          <div class="counter-value" id="formCounter">0</div>
+        </div>
+      </div>
+
+      <!-- Conversion Tracking Card -->
+      <div class="card">
+        <h3 class="card-title">
+          <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Conversion Tracking
+        </h3>
+        <button class="button" onclick="trackConversion(9.99)">
+          Track $9.99 Purchase
+        </button>
+        <button class="button" onclick="trackConversion(49.99)">
+          Track $49.99 Purchase
+        </button>
+        <button class="button" onclick="trackConversion(99.99)">
+          Track $99.99 Purchase
+        </button>
+        <div class="counter">
+          <div class="counter-label">Conversions Tracked</div>
+          <div class="counter-value" id="conversionCounter">0</div>
+        </div>
+      </div>
+
+      <!-- Page Navigation Card -->
+      <div class="card">
+        <h3 class="card-title">
+          <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+          </svg>
+          Page Navigation
+        </h3>
+        <p style="color: #9ca3af; font-size: 0.875rem; margin-bottom: 1rem;">
+          Click these links to track page navigation events
+        </p>
+        <div class="nav-links">
+          <a href="?page=features" class="nav-link" onclick="trackPageView(event, 'features')">Features</a>
+          <a href="?page=pricing" class="nav-link" onclick="trackPageView(event, 'pricing')">Pricing</a>
+          <a href="?page=docs" class="nav-link" onclick="trackPageView(event, 'docs')">Docs</a>
+          <a href="?page=about" class="nav-link" onclick="trackPageView(event, 'about')">About</a>
+        </div>
+        <div class="counter" style="margin-top: 1.5rem;">
+          <div class="counter-label">Pageviews</div>
+          <div class="counter-value" id="pageviewCounter">1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Link -->
+    <div class="card" style="text-align: center;">
+      <h3 class="card-title" style="justify-content: center;">
+        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+        View Your Dashboard
+      </h3>
+      <p style="color: #9ca3af; margin-bottom: 1rem;">
+        Open your dashboard to see these events appear in real-time!
+      </p>
+      <a href="/" class="button" style="text-decoration: none;">
+        Open Dashboard
+        <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Demo Page Interactivity -->
+  <script>
+    let clickCount = 0;
+    let formCount = 0;
+    let conversionCount = 0;
+    let pageviewCount = 1;
+    let demoOriginId = null;
+
+    // Load demo origin and initialize tracking
+    async function initializeDemo() {
+      try {
+        const response = await fetch('/api/demo/origin');
+        const data = await response.json();
+        
+        if (data.origin && data.token) {
+          demoOriginId = data.origin.id;
+          console.log('[Demo] Demo origin initialized:', data.origin.domain);
+          
+          // Dynamically load tracking script with real token
+          const script = document.createElement('script');
+          script.src = '/fhe-analytics.js';
+          script.setAttribute('data-origin-token', data.token);
+          script.async = true;
+          document.body.appendChild(script);
+          
+          console.log('[Demo] Tracking SDK loaded with real origin token');
+        }
+      } catch (error) {
+        console.error('[Demo] Failed to initialize demo origin:', error);
+      }
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', () => {
+      initializeDemo();
+      console.log('[Demo] Page loaded - initializing tracking');
+    });
+
+    function trackClick(buttonType) {
+      clickCount++;
+      document.getElementById('clickCounter').textContent = clickCount;
+      
+      // Track custom event via FHE Analytics
+      if (window.fheAnalytics) {
+        window.fheAnalytics.track('button_click', { 
+          button: buttonType,
+          count: clickCount
+        });
+        console.log(`[Demo] Tracked click: ${buttonType}`);
+      }
+    }
+
+    function trackFormSubmit(event) {
+      event.preventDefault();
+      formCount++;
+      document.getElementById('formCounter').textContent = formCount;
+      
+      // Track form submission
+      if (window.fheAnalytics) {
+        window.fheAnalytics.track('form_submit', { 
+          formType: 'demo_form',
+          count: formCount
+        });
+        console.log('[Demo] Tracked form submission');
+      }
+
+      // Reset form
+      event.target.reset();
+      
+      // Show success message
+      alert('✅ Form submitted and tracked!');
+    }
+
+    function trackConversion(amount) {
+      conversionCount++;
+      document.getElementById('conversionCounter').textContent = conversionCount;
+      
+      // Track conversion with value
+      if (window.fheAnalytics) {
+        window.fheAnalytics.conversion(amount, { 
+          product: `Demo Product $${amount}`,
+          count: conversionCount
+        });
+        console.log(`[Demo] Tracked conversion: $${amount}`);
+      }
+      
+      alert(`🎉 Tracked $${amount} conversion!`);
+    }
+
+    function trackPageView(event, pageName) {
+      event.preventDefault();
+      pageviewCount++;
+      document.getElementById('pageviewCounter').textContent = pageviewCount;
+      
+      // Track manual pageview
+      if (window.fheAnalytics) {
+        window.fheAnalytics.track('pageview', { 
+          page: pageName,
+          count: pageviewCount
+        });
+        console.log(`[Demo] Tracked pageview: ${pageName}`);
+      }
+
+      // Update URL without reload
+      window.history.pushState({}, '', `?page=${pageName}`);
+      
+      alert(`📄 Navigated to ${pageName} page (tracked!)`);
+    }
+
+    // Log when tracking SDK is ready
+    if (window.fheAnalytics) {
+      console.log('[Demo] FHE Analytics SDK loaded and ready');
+    } else {
+      console.log('[Demo] Waiting for FHE Analytics SDK to load...');
+    }
+  </script>
+</body>
+</html>
